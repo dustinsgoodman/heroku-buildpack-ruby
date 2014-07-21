@@ -251,6 +251,7 @@ private
       set_env_override "GEM_PATH", "$HOME/#{slug_vendor_base}:$GEM_PATH"
       set_env_default  "LANG",     "en_US.UTF-8"
       set_env_override "PATH",     binstubs_relative_paths.map {|path| "$HOME/#{path}" }.join(":") + ":$PATH"
+      set_env_default  "LD_LIBRARY_PATH", "/app/vendor/#{ICU4C_VENDOR_PATH}/lib"
 
       if ruby_version.jruby?
         set_env_default "JAVA_OPTS", default_java_opts
