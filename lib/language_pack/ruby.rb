@@ -308,7 +308,7 @@ ERROR_MSG
             FileUtils.rm(sha_file)
           else
             # @fetchers[:mri].fetch_untar("#{ruby_version.version}.tgz")
-            @fetchers[:buildpack].fetch_untar("#{ruby_version.version.sub(ruby_vm, "#{ruby_vm}-build")}.tgz")
+            @fetchers[:buildpack].fetch_untar("#{ruby_version.version}.tgz")
           end
         end
       end
