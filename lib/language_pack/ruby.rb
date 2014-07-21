@@ -22,6 +22,7 @@ class LanguagePack::Ruby < LanguagePack::Base
   DEFAULT_RUBY_VERSION = "ruby-2.0.0"
   RBX_BASE_URL         = "http://binaries.rubini.us/heroku"
   NODE_BP_PATH         = "vendor/node/bin"
+  ICU4C_VENDOR_PATH    = "icu4c-52.1.0"
 
   # detects if this is a valid Ruby app
   # @return [Boolean] true if it's a Ruby app
@@ -89,6 +90,7 @@ class LanguagePack::Ruby < LanguagePack::Base
       install_jvm
       setup_language_pack_environment
       setup_profiled
+      install_icu4c
       allow_git do
         install_bundler_in_app
         build_bundler
@@ -232,6 +234,7 @@ private
       ENV["GEM_PATH"] = slug_vendor_base
       ENV["GEM_HOME"] = slug_vendor_base
       ENV["PATH"]     = default_path
+      ENV["LD_LIBRARY_PATH"] = "vendor/#{ICU4C_VENDOR_PATH}/lib"
     end
   end
 
@@ -266,7 +269,8 @@ ERROR
         Dir.chdir(build_ruby_path) do
           ruby_vm = "ruby"
           instrument "ruby.fetch_build_ruby" do
-            @fetchers[:mri].fetch_untar("#{ruby_version.version.sub(ruby_vm, "#{ruby_vm}-build")}.tgz")
+            # @fetchers[:mri].fetch_untar("#{ruby_version.version.sub(ruby_vm, "#{ruby_vm}-build")}.tgz")
+            @fetchers[:buildpack].fetch_untar("#{ruby_version.version.sub(ruby_vm, "#{ruby_vm}-build")}.tgz")
           end
         end
         error invalid_ruby_version_message unless $?.success?
@@ -296,7 +300,8 @@ ERROR_MSG
             FileUtils.rm(file)
             FileUtils.rm(sha_file)
           else
-            @fetchers[:mri].fetch_untar("#{ruby_version.version}.tgz")
+            # @fetchers[:mri].fetch_untar("#{ruby_version.version}.tgz")
+            @fetchers[:buildpack].fetch_untar("#{ruby_version.version.sub(ruby_vm, "#{ruby_vm}-build")}.tgz")
           end
         end
       end
@@ -515,6 +520,7 @@ WARNING
           env_vars       = {
             "BUNDLE_GEMFILE"                => "#{pwd}/Gemfile",
             "BUNDLE_CONFIG"                 => "#{pwd}/.bundle/config",
+            "BUNDLE_BUILD__CHARLOCK_HOLMES" => "--with-icu-dir=#{pwd}/vendor/#{ICU4C_VENDOR_PATH} --with-icu-lib=#{pwd}/vendor/#{ICU4C_VENDOR_PATH}/lib --with-icu-include=#{pwd}/vendor/#{ICU4C_VENDOR_PATH}/include",
             "CPATH"                         => noshellescape("#{yaml_include}:$CPATH"),
             "CPPATH"                        => noshellescape("#{yaml_include}:$CPPATH"),
             "LIBRARY_PATH"                  => noshellescape("#{yaml_lib}:$LIBRARY_PATH"),
@@ -806,6 +812,13 @@ params = CGI.parse(uri.query || "")
       cache.clear bundler_cache
       # need to reinstall language pack gems
       install_bundler_in_app
+    end
+  end
+
+  def install_icu4c
+    dir = File.join('vendor')
+    Dir.chdir(dir) do
+      run("curl #{ICU4C_URL} -s -o - | tar xzf -")
     end
   end
 end
